@@ -110,9 +110,11 @@ prof_trash <- read_excel(
     homes_powered = `Homes Powered*`
   ) |>
   mutate(
-  plastic_bottles = as.numeric(plastic_bottles),
-  wheel = "Professor"
-)
+    plastic_bottles = suppressWarnings(
+      as.numeric(as.character(plastic_bottles))
+    ),
+    wheel = "Professor"
+  )
 ```
 
 ## 2(c) Gwynnda the Good Wheel
@@ -144,14 +146,13 @@ trash_wheel <- bind_rows(
 )
 ```
 
-The combined dataset contains 1,269 observations and 15 variables, with each observation representing a dumpster collection and the wheel variable identifying the trash wheel.
-The total weight collected by Professor Trash Wheel was 294.96 tons. The total number of cigarette butts collected by Gwynnda the Good Wheel in June 2022 was 18,120.
+The combined dataset contains `r nrow(trash_wheel)` observations and `r ncol(trash_wheel)` variables. Key variables include the dumpster number, month, year, date, weight collected, volume collected, types of trash collected, and the `wheel` identifier. Each observation represents a dumpster collection. The total weight collected by Professor Trash Wheel was `r sum(prof_trash$weight_tons, na.rm = TRUE)` tons. The total number of cigarette butts collected by Gwynnda the Good Wheel in June 2022 was `r format(sum(gwynnda$cigarette_butts[gwynnda$Month == "June" & gwynnda$Year == 2022], na.rm = TRUE), scientific = FALSE, big.mark = ",")`.
 
 ## Problem 3
 
 
 ```{r}
-baseline <- read_csv("data/mci/data_mci/MCI_baseline.csv") |>
+baseline_raw <- read_csv("data/mci/data_mci/MCI_baseline.csv") |>
   rename(
     participant_id = `...1`,
     baseline_age = `Age at the study baseline`,
@@ -174,10 +175,18 @@ baseline <- read_csv("data/mci/data_mci/MCI_baseline.csv") |>
     ),
     mci_onset_age = na_if(mci_onset_age, "."),
     mci_onset_age = as.numeric(mci_onset_age)
-  ) |>
-  filter(is.na(mci_onset_age) | mci_onset_age > baseline_age)
+  )
+
+baseline_mci <- sum(
+  !is.na(baseline_raw$mci_onset_age) &
+    baseline_raw$mci_onset_age <= baseline_raw$baseline_age
+)
+baseline <- baseline_raw |>
+  filter(
+    is.na(mci_onset_age) |
+      mci_onset_age > baseline_age
+  )
 ```
-The baseline demographic data were imported from a CSV file and cleaned by removing an extra header row, converting age and education variables to numeric values, and recoding sex and APOE4 carrier status into nonnumeric categories. Participants with MCI at baseline were excluded. The dataset included 483 recruited participants; 4 had MCI at baseline and were excluded, leaving 479 participants for follow-up, of whom 93 developed MCI. The average baseline age was 65.03 years, and 30% of women were APOE4 carriers. The longitudinal amyloid biomarker data were also imported from a CSV file and reshaped from wide to long format, with each row representing a participant at a specific study visit. There were 471 participants represented in both the baseline and amyloid datasets, and these participants were combined for the final dataset.
 
 ```{r}
 amyloid <- read_csv("data/mci/data_mci/mci_amyloid.csv") |>
@@ -214,4 +223,5 @@ write_csv(
   "data/mci_combined.csv"
 )
 ```
+The baseline demographic data were imported from a CSV file and cleaned by removing an extra header row, converting age and education variables to numeric values, and recoding sex and APOE4 carrier status into nonnumeric categories. Participants with MCI at baseline were excluded. The dataset included `r nrow(baseline_raw)` recruited participants; `r baseline_mci` had MCI at baseline and were excluded, leaving `r nrow(baseline)` participants for follow-up, of whom `r sum(!is.na(baseline$mci_onset_age))` developed MCI. The average baseline age was `r round(mean(baseline$baseline_age, na.rm = TRUE), 2)` years, and `r round(mean(baseline$apoe4[baseline$sex == "Female"] == "Carrier", na.rm = TRUE) * 100)`% of women were APOE4 carriers. The longitudinal amyloid biomarker data were also imported from a CSV file and reshaped from wide to long format, with each row representing a participant at a specific study visit. There were 471 participants represented in both the baseline and amyloid datasets, and these participants were combined for the final dataset.
 
