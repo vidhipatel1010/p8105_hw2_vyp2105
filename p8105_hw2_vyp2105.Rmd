@@ -70,7 +70,10 @@ mr_trash <- read_excel(
 ) |>
   select(-`...15`, -`...16`) |>
   filter(!is.na(Dumpster)) |>
-  mutate(`Sports Balls` = as.integer(round(`Sports Balls`))) |>
+  mutate(
+  `Sports Balls` = as.integer(round(`Sports Balls`)),
+  wheel = "Mr"
+) |>
   rename(
     weight_tons = `Weight (tons)`,
     volume_cubic_yards = `Volume (cubic yards)`,
@@ -106,7 +109,10 @@ prof_trash <- read_excel(
     wrappers = Wrappers,
     homes_powered = `Homes Powered*`
   ) |>
-  mutate(wheel = "Professor")
+  mutate(
+  plastic_bottles = as.numeric(plastic_bottles),
+  wheel = "Professor"
+)
 ```
 
 ## 2(c) Gwynnda the Good Wheel
@@ -128,7 +134,84 @@ gwynnda <- read_excel(
     homes_powered = `Homes Powered*`
   ) |>
   mutate(wheel = "Gwynnda")
+mr_trash <- mr_trash |>
+  mutate(Year = as.numeric(Year))
+
+trash_wheel <- bind_rows(
+  mr_trash,
+  prof_trash,
+  gwynnda
+)
 ```
 
 The combined dataset contains 1,269 observations and 15 variables, with each observation representing a dumpster collection and the wheel variable identifying the trash wheel.
 The total weight collected by Professor Trash Wheel was 294.96 tons. The total number of cigarette butts collected by Gwynnda the Good Wheel in June 2022 was 18,120.
+
+## Problem 3
+
+
+```{r}
+baseline <- read_csv("data/mci/data_mci/MCI_baseline.csv") |>
+  rename(
+    participant_id = `...1`,
+    baseline_age = `Age at the study baseline`,
+    sex = `1 = Male, 0 = Female`,
+    education_years = `Years of education`,
+    apoe4 = `1 = APOE4 carrier, 0 = APOE4 non-carrier`,
+    mci_onset_age = `Age at the onset of MCI; missing if a subject remains MCI free during the follow-up period`
+  ) |>
+  slice(-1) |>
+  mutate(
+    baseline_age = as.numeric(baseline_age),
+    education_years = as.numeric(education_years),
+    sex = case_when(
+      sex == "1" ~ "Male",
+      sex == "0" ~ "Female"
+    ),
+    apoe4 = case_when(
+      apoe4 == "1" ~ "Carrier",
+      apoe4 == "0" ~ "Non-carrier"
+    ),
+    mci_onset_age = na_if(mci_onset_age, "."),
+    mci_onset_age = as.numeric(mci_onset_age)
+  ) |>
+  filter(is.na(mci_onset_age) | mci_onset_age > baseline_age)
+```
+The baseline demographic data were imported from a CSV file and cleaned by removing an extra header row, converting age and education variables to numeric values, and recoding sex and APOE4 carrier status into nonnumeric categories. Participants with MCI at baseline were excluded. The dataset included 483 recruited participants; 4 had MCI at baseline and were excluded, leaving 479 participants for follow-up, of whom 93 developed MCI. The average baseline age was 65.03 years, and 30% of women were APOE4 carriers. The longitudinal amyloid biomarker data were also imported from a CSV file and reshaped from wide to long format, with each row representing a participant at a specific study visit. There were 471 participants represented in both the baseline and amyloid datasets, and these participants were combined for the final dataset.
+
+```{r}
+amyloid <- read_csv("data/mci/data_mci/mci_amyloid.csv") |>
+  slice(-1) |>
+  rename(
+    participant_id = `Study ID`,
+    baseline = `Time (in years) elapsed since the study baseline to the visit where biomarker Amyloid _ 42/40 ratio was measured`,
+    time2 = `NA...3`,
+    time4 = `NA...4`,
+    time6 = `NA...5`,
+    time8 = `NA...6`
+  ) |>
+  pivot_longer(
+    cols = c(baseline, time2, time4, time6, time8),
+    names_to = "visit",
+    values_to = "amyloid_42_40"
+  ) |>
+  mutate(
+    participant_id = as.character(participant_id),
+    amyloid_42_40 = as.numeric(amyloid_42_40)
+  )
+
+id_overlap <- intersect(
+  baseline$participant_id,
+  amyloid$participant_id
+)
+
+mci_combined <- baseline |>
+  filter(participant_id %in% id_overlap) |>
+  left_join(amyloid, by = "participant_id")
+
+write_csv(
+  mci_combined,
+  "data/mci_combined.csv"
+)
+```
+
