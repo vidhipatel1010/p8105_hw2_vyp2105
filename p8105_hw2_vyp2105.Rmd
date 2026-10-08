@@ -61,4 +61,74 @@ n_distinct(a_train$`Station Name`[a_train$ADA == TRUE])
 ```
 The cleaned NYC Transit dataset contains information on subway station entrances and exits, including the subway line, station name, station latitude and longitude, routes served, entrance type, entry status, vending availability, and ADA compliance. The `Entry` variable was converted from character values of YES/NO to a logical variable. The route variables were also reorganized into separate route number and route name variables. The resulting dataset has 1,868 rows and 19 columns. The data are tidy because each variable is represented by a column and each observation represents a subway station entrance or exit.
 
+# Problem 2 — Mr. Trash Wheel
 
+```{r}
+mr_trash <- read_excel(
+  "data/trash_wheel.xlsx",
+  sheet = "Mr. Trash Wheel"
+) |>
+  select(-`...15`, -`...16`) |>
+  filter(!is.na(Dumpster)) |>
+  mutate(`Sports Balls` = as.integer(round(`Sports Balls`))) |>
+  rename(
+    weight_tons = `Weight (tons)`,
+    volume_cubic_yards = `Volume (cubic yards)`,
+    plastic_bottles = `Plastic Bottles`,
+    polystyrene = Polystyrene,
+    cigarette_butts = `Cigarette Butts`,
+    glass_bottles = `Glass Bottles`,
+    plastic_bags = `Plastic Bags`,
+    wrappers = Wrappers,
+    sports_balls = `Sports Balls`,
+    homes_powered = `Homes Powered*`
+  )
+```
+The cleaned Mr. Trash Wheel dataset contains 740 observations and 15 variables. Key variables include the dumpster number, month, year, date, weight collected, volume collected, and the amounts of different types of trash collected, including plastic bottles, polystyrene, cigarette butts, glass bottles, plastic bags, wrappers, and sports balls. The dataset is organized so that each observation represents a dumpster collection.
+
+## 2(b) Professor Trash Wheel
+
+```{r}
+prof_trash <- read_excel(
+  "data/trash_wheel.xlsx",
+  sheet = "Professor Trash Wheel"
+) |>
+  select(1:13) |>
+  filter(!is.na(Dumpster)) |>
+  rename(
+    weight_tons = `Weight (tons)`,
+    volume_cubic_yards = `Volume (cubic yards)`,
+    plastic_bottles = `Plastic Bottles`,
+    polystyrene = Polystyrene,
+    cigarette_butts = `Cigarette Butts`,
+    glass_bottles = `Glass Bottles`,
+    plastic_bags = `Plastic Bags`,
+    wrappers = Wrappers,
+    homes_powered = `Homes Powered*`
+  ) |>
+  mutate(wheel = "Professor")
+```
+
+## 2(c) Gwynnda the Good Wheel
+
+```{r}
+gwynnda <- read_excel(
+  "data/trash_wheel.xlsx",
+  sheet = "Gwynnda the Good Wheel of the W"
+) |>
+  filter(!is.na(Dumpster)) |>
+  rename(
+    weight_tons = `Weight (tons)`,
+    volume_cubic_yards = `Volume (cubic yards)`,
+    plastic_bottles = `Plastic Bottles`,
+    polystyrene = Polystyrene,
+    cigarette_butts = `Cigarette Butts`,
+    plastic_bags = `Plastic Bags`,
+    wrappers = Wrappers,
+    homes_powered = `Homes Powered*`
+  ) |>
+  mutate(wheel = "Gwynnda")
+```
+
+The combined dataset contains 1,269 observations and 15 variables, with each observation representing a dumpster collection and the wheel variable identifying the trash wheel.
+The total weight collected by Professor Trash Wheel was 294.96 tons. The total number of cigarette butts collected by Gwynnda the Good Wheel in June 2022 was 18,120.
