@@ -9,3 +9,56 @@ library(tidyverse)
 library(readxl)
 ```
 
+## Problem 1
+
+### NYC Transit Subway Entrance and Exit Data
+
+```{r}
+nyc_transit <- read_csv("data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv")
+
+nyc_transit <- nyc_transit |>
+  select(
+    Line,
+    `Station Name`,
+    `Station Latitude`,
+    `Station Longitude`,
+    Route1:Route11,
+    `Entrance Type`,
+    Entry,
+    Vending,
+    ADA
+  ) |>
+  mutate(
+    Entry = Entry == "YES"
+  )
+
+dim(nyc_transit)
+```
+```{r}
+n_distinct(nyc_transit$`Station Name`)
+n_distinct(nyc_transit$`Station Name`[nyc_transit$ADA == TRUE])
+mean(nyc_transit$Entry[nyc_transit$Vending == "NO"])
+```
+```{r}
+nyc_routes <- nyc_transit |>
+  mutate(across(Route1:Route11, as.character)) |>
+  pivot_longer(
+    cols = Route1:Route11,
+    names_to = "route_number",
+    values_to = "route_name"
+  ) |>
+  filter(!is.na(route_name))
+
+nyc_routes
+```
+```{r}
+a_train <- nyc_routes |>
+  filter(route_name == "A")
+
+n_distinct(a_train$`Station Name`)
+
+n_distinct(a_train$`Station Name`[a_train$ADA == TRUE])
+```
+The cleaned NYC Transit dataset contains information on subway station entrances and exits, including the subway line, station name, station latitude and longitude, routes served, entrance type, entry status, vending availability, and ADA compliance. The `Entry` variable was converted from character values of YES/NO to a logical variable. The route variables were also reorganized into separate route number and route name variables. The resulting dataset has 1,868 rows and 19 columns. The data are tidy because each variable is represented by a column and each observation represents a subway station entrance or exit.
+
+
